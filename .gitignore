@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.env
+venv/
+.venv/
+
+# Uploaded transcripts and other personal documents: never commit these
+uploads/
+temp_*
+*.pdf
+
+# Node.js
+node_modules/
+dist/
+build/
+npm-debug.log*
+
+# OS and IDE
+.DS_Store
+.vscode/
+.idea/

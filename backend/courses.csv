@@ -1,0 +1,4 @@
+code,title,description,prerequisites
+CS101,Introduction to Programming,Basic programming concepts with Python,None
+CS201,Data Structures,Fundamental data structures and algorithms,CS101
+MATH101,Calculus I,"Limits, derivatives, and integrals",None
