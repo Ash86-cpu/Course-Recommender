@@ -49,7 +49,5 @@ ul {
 
 li {
   margin-bottom: 8px;
-  padding: 8px;
-  background: white;
-  border-radius: 4px;
+  padding: 4px 0;
 }

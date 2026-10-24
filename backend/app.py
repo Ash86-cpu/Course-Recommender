@@ -1,63 +1,38 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import os
-import pdfplumber
-import pandas as pd
-import matplotlib.pyplot as plt
-import io
+"""Flask API: upload a transcript, get course recommendations and charts back.
+
+Uploaded transcripts are processed in memory and never written to disk.
+"""
+
 import base64
+import io
+import os
+from pathlib import Path
+
+import matplotlib
+matplotlib.use("Agg")  # render charts without a display
+import matplotlib.pyplot as plt
 import numpy as np
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 from matplotlib import patheffects
 
+from recommender import CourseRecommender
+from transcript_parser import extract_text, parse_courses
+
+ALLOWED_EXTENSIONS = {".pdf", ".txt"}
+CATALOGUE = Path(__file__).parent / "catalogue.csv"
+PALETTE = ['#00FF88', '#00CC66', '#009944', '#33FFAA', '#66FFCC']
+
 app = Flask(__name__)
-CORS(app)
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # reject uploads over 5 MB
+CORS(app, origins=["http://localhost:3000"])          # only the local React app may call the API
 
-# Configuration
-app.config['UPLOAD_FOLDER'] = 'uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+recommender = CourseRecommender(CATALOGUE)
 
-# Enhanced course database
-COURSES = pd.DataFrame([
-    {
-        "code": "CS201", 
-        "name": "Data Structures", 
-        "match": 88, 
-        "prereq": "CS101", 
-        "category": "Core",
-        "skills": ["Algorithm Design", "Memory Management", "Optimization"],
-        "description": "Master low-level data organization for optimal system performance.",
-        "syllabus": ["Bit Manipulation", "Quantum Arrays", "Neural Hashing"],
-        "difficulty": "Intermediate",
-        "workload": "Moderate",
-        "popularity": "High"
-    },
-    {
-        "code": "QC401", 
-        "name": "Quantum Algorithms", 
-        "match": 92, 
-        "prereq": "CS201", 
-        "category": "Advanced",
-        "skills": ["Qubit Manipulation", "Superposition", "Entanglement"],
-        "description": "Harness quantum phenomena for exponential speedups in computation.",
-        "syllabus": ["Shor's Algorithm", "Grover's Search", "Quantum Fourier Transform"],
-        "difficulty": "Expert",
-        "workload": "High",
-        "popularity": "Medium"
-    },
-    {
-        "code": "AI301", 
-        "name": "Neural Networks", 
-        "match": 76, 
-        "prereq": "CS201", 
-        "category": "Advanced",
-        "skills": ["Backpropagation", "Tensor Operations", "Model Tuning"],
-        "description": "Design and train artificial neural networks for pattern recognition.",
-        "syllabus": ["Perceptrons", "CNNs", "RNNs"],
-        "difficulty": "Intermediate",
-        "workload": "High",
-        "popularity": "Very High"
-    }
-])
+
+def error(message, status):
+    return jsonify({"success": False, "error": message, "recommendations": []}), status
+
 
 def create_pie_chart(recommendations):
     """Create cyberpunk-style pie chart with improved visibility"""
@@ -65,12 +40,12 @@ def create_pie_chart(recommendations):
     fig, ax = plt.subplots(figsize=(8, 6), facecolor='black')
     
     # Color scheme with better contrast
-    colors = ['#00FF88', '#00CC66', '#009944']
+    colors = PALETTE[:len(recommendations)]
     explode = [0.05] * len(recommendations)
     
     wedges, texts, autotexts = ax.pie(
         recommendations['match'],
-        labels=recommendations['name'],
+        labels=recommendations['title'],
         colors=colors,
         explode=explode,
         shadow=True,
@@ -99,7 +74,7 @@ def create_pie_chart(recommendations):
     ax.set_title("COURSE MATCH DISTRIBUTION", color='#00FF41', pad=20, fontweight='bold')
     
     # Add legend with better visibility
-    ax.legend(wedges, recommendations['name'],
+    ax.legend(wedges, recommendations['title'],
               title="COURSES",
               loc="center left",
               bbox_to_anchor=(1, 0, 0.5, 1),
@@ -122,7 +97,7 @@ def create_bar_chart(recommendations):
     edge_colors = ['#00FF41'] * len(recommendations)
     
     bars = ax.bar(
-        recommendations['name'],
+        recommendations['title'],
         recommendations['match'],
         color=colors,
         edgecolor=edge_colors,
@@ -166,21 +141,19 @@ def create_radar_chart(recommendations):
     ax = fig.add_subplot(111, polar=True, facecolor='black')
     
     # Prepare data
-    categories = ['Match', 'Difficulty', 'Workload', 'Popularity']
+    categories = ['Match', 'Difficulty', 'Workload']
     N = len(categories)
     
     # Convert qualitative data to numerical
-    difficulty_map = {'Beginner': 30, 'Intermediate': 60, 'Expert': 90}
+    difficulty_map = {'Beginner': 30, 'Intermediate': 60, 'Advanced': 90}
     workload_map = {'Low': 30, 'Moderate': 60, 'High': 90}
-    popularity_map = {'Low': 30, 'Medium': 60, 'High': 80, 'Very High': 100}
-    
+        
     values = []
     for _, row in recommendations.iterrows():
         values.append([
             row['match'],
             difficulty_map.get(row['difficulty'], 60),
-            workload_map.get(row['workload'], 60),
-            popularity_map.get(row['popularity'], 60)
+            workload_map.get(row['workload'], 60)
         ])
     
     # Calculate angles and complete the loop
@@ -188,8 +161,8 @@ def create_radar_chart(recommendations):
     angles += angles[:1]
     
     # Plot each course with distinct colors
-    colors = ['#00FF88', '#00CC66', '#009944']
-    for i, (label, color) in enumerate(zip(recommendations['name'], colors)):
+    colors = PALETTE[:len(recommendations)]
+    for i, (label, color) in enumerate(zip(recommendations['title'], colors)):
         val = values[i] + values[i][:1]
         ax.plot(angles, val, linewidth=2, linestyle='solid', 
                 label=label, color=color)
@@ -218,44 +191,41 @@ def create_radar_chart(recommendations):
     return base64.b64encode(buf.getvalue()).decode('utf-8')
 
 @app.route('/api/recommend', methods=['POST'])
-def handle_upload():
+def recommend():
+    file = request.files.get('file')
+    if file is None or file.filename == '':
+        return error("No file uploaded", 400)
+    if Path(file.filename).suffix.lower() not in ALLOWED_EXTENSIONS:
+        return error("Only .pdf and .txt transcripts are accepted", 400)
+
     try:
-        if 'file' not in request.files:
-            return jsonify({"success": False, "error": "NO FILE DETECTED", "recommendations": []})
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"success": False, "error": "FILE CORRUPTED", "recommendations": []})
+        text = extract_text(file.read(), file.filename)
+    except Exception:
+        return error("Could not read the file. Is it a valid PDF?", 400)
 
-        # Process PDF
-        with pdfplumber.open(file) as pdf:
-            text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+    taken = parse_courses(text)
+    if not taken:
+        return error("No courses found. Course lines should start with a code like CS101.", 422)
 
-        recommendations = COURSES.copy()
-        
-        # Generate all chart types
-        pie_chart = create_pie_chart(recommendations)
-        bar_chart = create_bar_chart(recommendations)
-        radar_chart = create_radar_chart(recommendations)
-        
-        return jsonify({
-            "success": True,
-            "recommendations": recommendations.to_dict('records'),
-            "visualizations": {
-                "pie": pie_chart,
-                "bar": bar_chart,
-                "radar": radar_chart
-            },
-            "error": None
-        })
+    recommendations = recommender.recommend(taken, top_n=5)
+    return jsonify({
+        "success": True,
+        "error": None,
+        "courses_found": taken,
+        "recommendations": recommendations.to_dict('records'),
+        "visualizations": {
+            "pie": create_pie_chart(recommendations),
+            "bar": create_bar_chart(recommendations),
+            "radar": create_radar_chart(recommendations),
+        },
+    })
 
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": f"SYSTEM ERROR: {str(e)}",
-            "recommendations": [],
-            "visualizations": None
-        })
+
+@app.errorhandler(413)
+def too_large(_):
+    return error("File too large (5 MB limit)", 413)
+
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    # Debug mode exposes an interactive console, so it is opt-in only.
+    app.run(port=5000, debug=os.environ.get("FLASK_DEBUG") == "1")

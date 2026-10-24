@@ -1,0 +1,23 @@
+code,title,area,description,skills,prerequisites,difficulty,workload
+CS101,Introduction to Programming,programming,"Programming fundamentals in Python: variables, control flow, functions and debugging.",Python;Problem Solving;Debugging,,Beginner,Moderate
+CS102,Object-Oriented Programming,programming software,"Classes, inheritance and design patterns for building maintainable software in Java.",Java;OOP;Design Patterns,CS101,Beginner,Moderate
+CS201,Data Structures and Algorithms,programming algorithms,"Arrays, linked lists, trees, graphs, hashing and algorithm complexity analysis.",Algorithms;Complexity Analysis;Data Structures,CS101,Intermediate,High
+CS210,Databases,data databases,"Relational modelling, SQL queries, normalisation, indexing and transactions.",SQL;Data Modelling;Query Optimisation,CS101,Intermediate,Moderate
+CS220,Computer Networks,networks systems,"TCP/IP, routing, DNS, HTTP and how data moves across networks and the internet.",TCP/IP;Routing;Network Protocols,CS101,Intermediate,Moderate
+CS230,Operating Systems,systems,"Processes, threads, memory management, file systems and scheduling in operating systems.",Linux;Concurrency;Memory Management,CS201,Intermediate,High
+CS240,Web Development,programming web,"Building web applications with HTML, CSS, JavaScript, React front ends and REST APIs.",JavaScript;React;REST APIs,CS101,Beginner,Moderate
+DS201,Introduction to Data Science,data analytics,"Data cleaning, exploratory analysis and visualisation with pandas and matplotlib.",Pandas;Visualisation;Statistics,CS101,Beginner,Moderate
+DS301,Machine Learning,data analytics machine learning,"Supervised and unsupervised learning: regression, classification, clustering and model evaluation.",Scikit-learn;Model Evaluation;Feature Engineering,DS201,Intermediate,High
+DS302,Deep Learning,data machine learning,"Neural networks, backpropagation, convolutional and recurrent networks with PyTorch.",PyTorch;Neural Networks;Model Tuning,DS301,Advanced,High
+DS310,Natural Language Processing,data machine learning,"Text processing, TF-IDF, word embeddings and language models for text classification.",Text Classification;Embeddings;Language Models,DS301,Advanced,High
+DS320,Big Data Processing,data analytics,"Distributed data processing with Hadoop and Spark, streaming and large-scale analytics.",Spark;Hadoop;Data Pipelines,DS201,Intermediate,High
+DS330,Data Governance and Ethics,data privacy,"Privacy, GDPR, bias in algorithms and responsible use of data in organisations.",GDPR;Data Ethics;Compliance,,Beginner,Low
+SEC201,Introduction to Cyber Security,security,"Threats, vulnerabilities, cryptography basics, authentication and security principles.",Threat Modelling;Authentication;Security Principles,CS101,Beginner,Moderate
+SEC301,Network Security,security networks,"Firewalls, intrusion detection, VPNs and securing network infrastructure against attacks.",Firewalls;Intrusion Detection;Network Defence,CS220;SEC201,Intermediate,High
+SEC302,Applied Cryptography,security cryptography,"Symmetric and asymmetric encryption, hashing, digital signatures and key management.",Encryption;Hashing;Key Management,SEC201,Advanced,High
+SEC310,Penetration Testing,security,"Ethical hacking methodology, reconnaissance, exploitation and reporting of vulnerabilities.",Ethical Hacking;Vulnerability Assessment;Reporting,SEC301,Advanced,High
+SEC320,Security Operations and Incident Response,security,"SIEM monitoring, log analysis, threat detection and responding to security incidents.",SIEM;Log Analysis;Incident Response,SEC201,Intermediate,Moderate
+SEC330,Digital Forensics,security,"Evidence acquisition, file system and memory forensics, and malware analysis.",Forensics;Malware Analysis;Evidence Handling,SEC201,Advanced,High
+MATH101,Calculus,mathematics,"Limits, derivatives, integrals and their applications.",Calculus;Mathematical Reasoning,,Beginner,Moderate
+MATH201,Linear Algebra,mathematics data,"Vectors, matrices, eigenvalues and their use in data science and machine learning.",Matrices;Eigenvalues;Vector Spaces,MATH101,Intermediate,Moderate
+MATH210,Probability and Statistics,mathematics statistics data,"Probability distributions, hypothesis testing, regression and statistical inference.",Probability;Hypothesis Testing;Inference,MATH101,Intermediate,Moderate

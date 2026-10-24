@@ -4,6 +4,7 @@ import './App.css';
 function App() {
   const [state, setState] = useState({
     recommendations: [],
+    coursesFound: [],
     visualizations: null,
     isLoading: false,
     error: null,
@@ -20,6 +21,7 @@ function App() {
       isLoading: true, 
       error: null,
       recommendations: [],
+      coursesFound: [],
       visualizations: null
     }));
 
@@ -39,6 +41,7 @@ function App() {
       setState(prev => ({
         ...prev,
         recommendations: data.recommendations,
+        coursesFound: data.courses_found,
         visualizations: data.visualizations,
         isLoading: false
       }));
@@ -71,12 +74,12 @@ function App() {
                 <div className="cyber-loader"></div>
               </>
             ) : (
-              'SELECT TRANSCRIPT_FILE.PDF'
+              'SELECT TRANSCRIPT (.PDF / .TXT)'
             )}
             <input 
               type="file" 
               onChange={handleFileUpload} 
-              accept=".pdf" 
+              accept=".pdf,.txt" 
               disabled={state.isLoading}
             />
           </label>
@@ -88,6 +91,19 @@ function App() {
         {state.error && (
           <div className="cyber-error">
             <span className="blink">⚠️</span> {state.error}
+          </div>
+        )}
+
+        {state.coursesFound?.length > 0 && (
+          <div className="recommendations-grid">
+            <div className="panel-header">
+              <span className="blink">▼</span> {`COURSES_FOUND_IN_TRANSCRIPT (${state.coursesFound.length})`}
+            </div>
+            <ul className="cyber-list">
+              {state.coursesFound.map((c) => (
+                <li key={c.code} className="cyber-list-item">• {c.code}: {c.title}</li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -124,7 +140,7 @@ function App() {
                 className="cyber-chart"
               />
               <div className="chart-instructions">
-                <span className="blink">!</span> HOVER OVER CHART ELEMENTS FOR DETAILS
+                <span className="blink">!</span> CLICK A COURSE CARD BELOW FOR DETAILS
               </div>
             </div>
           </div>
@@ -146,7 +162,8 @@ function App() {
                     <h3 className="cyber-text">{course.code}</h3>
                     <span className="match-value">{course.match}%</span>
                   </div>
-                  <h4 className="cyber-text-alt">{course.name}</h4>
+                  <h4 className="cyber-text-alt">{course.title}</h4>
+                  <p className="cyber-text-small">Because you took: {course.because_of}</p>
                   <div className="cyber-progress">
                     <div 
                       className="progress-bar" 
@@ -155,6 +172,9 @@ function App() {
                   </div>
                   <div className="card-footer">
                     <span className="difficulty-tag">{course.difficulty}</span>
+                    <span className="difficulty-tag">
+                      {course.prereqs_met ? 'PREREQS MET' : `NEEDS ${course.prerequisites.replaceAll(';', ', ')}`}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -171,7 +191,7 @@ function App() {
               </button>
               
               <div className="modal-header">
-                <h3 className="cyber-text">{state.selectedCourse.code}: {state.selectedCourse.name}</h3>
+                <h3 className="cyber-text">{state.selectedCourse.code}: {state.selectedCourse.title}</h3>
                 <div className="match-display">{state.selectedCourse.match}% MATCH</div>
               </div>
               
@@ -181,18 +201,19 @@ function App() {
                 <div className="cyber-col">
                   <h4 className="cyber-text-alt">> SKILLS_ACQUIRED:</h4>
                   <ul className="cyber-list">
-                    {state.selectedCourse.skills?.map((skill, i) => (
+                    {state.selectedCourse.skills?.split(';').map((skill, i) => (
                       <li key={i} className="cyber-list-item">• {skill}</li>
                     ))}
                   </ul>
                 </div>
                 
                 <div className="cyber-col">
-                  <h4 className="cyber-text-alt">> SYLLABUS_MODULES:</h4>
+                  <h4 className="cyber-text-alt">> COURSE_INFO:</h4>
                   <ul className="cyber-list">
-                    {state.selectedCourse.syllabus?.map((topic, i) => (
-                      <li key={i} className="cyber-list-item">• {topic}</li>
-                    ))}
+                    <li className="cyber-list-item">• Prerequisites: {state.selectedCourse.prerequisites ? state.selectedCourse.prerequisites.replaceAll(';', ', ') : 'None'}</li>
+                    <li className="cyber-list-item">• Difficulty: {state.selectedCourse.difficulty}</li>
+                    <li className="cyber-list-item">• Workload: {state.selectedCourse.workload}</li>
+                    <li className="cyber-list-item">• Suggested because you took: {state.selectedCourse.because_of}</li>
                   </ul>
                 </div>
               </div>

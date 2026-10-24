@@ -1,0 +1,12 @@
+Northwind University - Academic Transcript (SAMPLE, fictional student)
+Student: Alex Example        Programme: BSc Computer Science
+
+Code     Module                               Credits  Grade
+CS101    Introduction to Programming          15       A
+CS201    Data Structures and Algorithms       15       B+
+CS220    Computer Networks                    15       A
+SEC201   Introduction to Cyber Security       15       A
+DS201    Introduction to Data Science         15       B
+MATH101  Calculus                             15       C
+
+Overall average: 68.5
